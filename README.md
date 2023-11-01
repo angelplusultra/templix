@@ -1,6 +1,9 @@
-# template-god
+<div style="">
+<h1>Templix</h1>
+<img src="resources/icon.png" width="70"/>
+</div>
 
-An Electron application with React and TypeScript
+A project template management GUI tool for developers, made with React + Electron.
 
 ## Recommended IDE Setup
 

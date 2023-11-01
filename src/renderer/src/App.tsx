@@ -6,15 +6,17 @@ import { Toaster } from 'react-hot-toast'
 function App(): JSX.Element {
   return (
     <>
-      <GlobalComps.Navbar />
-      <GlobalComps.Container>
-        <Routes>
-          <Route element={<GlobalComps.Protect />}>
-            <Route index element={<Welcome />} />
-            <Route path="home" element={<Home />} />
-          </Route>
-        </Routes>
-      </GlobalComps.Container>
+      <GlobalComps.LoadingGate>
+        <GlobalComps.Navbar />
+        <GlobalComps.Container>
+          <Routes>
+            <Route element={<GlobalComps.Protect />}>
+              <Route index element={<Welcome />} />
+              <Route path="home" element={<Home />} />
+            </Route>
+          </Routes>
+        </GlobalComps.Container>
+      </GlobalComps.LoadingGate>
       <Toaster />
     </>
   )

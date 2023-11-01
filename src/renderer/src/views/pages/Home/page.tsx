@@ -2,9 +2,10 @@ import { electron } from '@renderer/helpers'
 import { Icon } from '@renderer/views/comps'
 import React, { useEffect, useRef, useState } from 'react'
 import { ChangeDescriptionModal, IconModal, Tag, TextEditorPromptModal } from './comps'
+import { useTemplates } from '@renderer/context'
 
 export function Home(): React.ReactNode {
-  const [templates, setTemplates] = useState<App.Template[]>([])
+  const { setTemplates, templates } = useTemplates()
 
   useEffect(() => {
     window.electron.ipcRenderer.send('get-templates')

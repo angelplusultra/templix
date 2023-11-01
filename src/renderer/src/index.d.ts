@@ -61,5 +61,25 @@ declare namespace App {
   interface TagProps {
     textContent: string
   }
+  interface ModalProps {
+    modalId: string
+    children: JSX.Element
+  }
+
+  interface TemplatesContext {
+    templates: Template[]
+    setTemplates: React.Dispatch<React.SetStateAction<Template[]>>
+  }
+
+  interface TemplatesProviderProps {
+    children: JSX.Element
+  }
+
+  interface LoadingGateProps {
+    children: React.ReactNode
+  }
+
+  interface UseTemplatesReturnType extends TemplatesContext {}
+
   type TextEditor = 'vim' | 'nvim' | 'vscode' | 'terminal'
 }

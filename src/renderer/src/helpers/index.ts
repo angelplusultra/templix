@@ -29,11 +29,33 @@ export const electron = {
         })
       })
     }),
-  openProjectInTextEditor: (templateName: string, dest: string, textEditor: App.TextEditor) => {
+  openProjectInTextEditor: (
+    templateName: string,
+    dest: string,
+    textEditor: App.TextEditor
+  ): void => {
     window.electron.ipcRenderer.send('open-with-text-editor', {
       name: templateName,
       dest,
       textEditor
+    })
+  },
+  changeTemplateDirectory: (dir: string): Promise<string> => {
+    window.electron.ipcRenderer.send('confirm-dir-selection', dir)
+
+    return new Promise((res) => {
+      window.electron.ipcRenderer.on('confirm-dir-selection:success', (_, d) => {
+        res(d)
+      })
+    })
+  },
+  getTemplates: (): Promise<App.Template[]> => {
+    window.electron.ipcRenderer.send('get-templates')
+
+    return new Promise((res) => {
+      window.electron.ipcRenderer.on('get-templates:success', (_, d) => {
+        res(d)
+      })
     })
   }
 }
