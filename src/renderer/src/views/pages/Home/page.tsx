@@ -1,32 +1,28 @@
 import { electron } from '@renderer/helpers'
-import { Icon } from '@renderer/views/comps'
+import { Icon, Modal } from '@renderer/views/comps'
 import React, { useEffect, useRef, useState } from 'react'
 import { ChangeDescriptionModal, IconModal, Tag, TextEditorPromptModal } from './comps'
 import { useTemplates } from '@renderer/context'
+import { FaPlus } from 'react-icons/fa'
+import toast from 'react-hot-toast'
 
 export function Home(): React.ReactNode {
-  const { setTemplates, templates } = useTemplates()
-
-  useEffect(() => {
-    window.electron.ipcRenderer.send('get-templates')
-    window.electron.ipcRenderer.once('get-templates:success', (_, d) => {
-      setTemplates(d)
-      console.log(d)
-    })
-  }, [])
+  const { setTemplates, onTemplatesFilterChange, filteredTemplates, addTag } = useTemplates()
 
   function Template({
     name,
     description,
     icon,
     title,
-    setTemplates
+    setTemplates,
+    tags
   }: App.TemplateProps): React.ReactNode {
     const [form, setForm] = useState({
       title: title,
       description: description
     })
     const [destinationPath, setDestinationPath] = useState('')
+    const [tagInput, setTagInput] = useState('')
 
     const [isEditingTitle, setIsEditingTitle] = useState(false)
     const inputRef = useRef<HTMLInputElement | null>(null)
@@ -61,9 +57,6 @@ export function Home(): React.ReactNode {
         submitForm()
       }
     }
-    useEffect(() => {
-      console.log(form)
-    }, [form])
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
       const { name, value } = e.target
@@ -79,7 +72,28 @@ export function Home(): React.ReactNode {
 
     const openIconPicker = (): void => {
       ;(document.getElementById(`my_icon_modal_${name}`) as HTMLDialogElement).showModal()
-      console.log('Opening icon picker')
+    }
+
+    const submitTag = (): void => {
+      if (!tagInput) {
+        toast.error('Please enter a tag', {
+          style: {
+            color: 'rgb(166, 173, 186)',
+            backgroundColor: 'rgb(21, 25, 30)'
+          }
+        })
+        return
+      }
+      if (tags.includes(tagInput.toLowerCase())) {
+        toast.error('This template already contains this tag', {
+          style: {
+            color: 'rgb(166, 173, 186)',
+            backgroundColor: 'rgb(21, 25, 30)'
+          }
+        })
+        return
+      }
+      addTag(name, tagInput)
     }
 
     return (
@@ -114,25 +128,35 @@ export function Home(): React.ReactNode {
                 {description || 'Add a description'}
               </span>
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center justify-start gap-2">
-                <h5>Tags</h5>
+                <h5 className="">Tags</h5>
+                <button
+                  onClick={(): void => {
+                    ;(
+                      document.getElementById(`modal_add_tag_${name}`) as HTMLDialogElement
+                    ).showModal()
+                  }}
+                  className="btn btn-xs btn-circle btn-outline"
+                >
+                  <FaPlus size={10} />
+                </button>
               </div>
-              <div className="text-sm flex gap-2 flex-wrap">
-                <Tag textContent="Tailwind" />
-                <Tag textContent="TypeScript" />
-                <Tag textContent="Rust" />
-                <Tag textContent="React" />
-
-                <button className="btn btn-circle btn-outline btn-sm">+</button>
+              <div className="h-32 overflow-auto">
+                <div className="text-sm flex flex-wrap items-center gap-1">
+                  {tags.map((tag, i) => (
+                    <Tag key={i} templateName={name} textContent={tag} />
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="card-actions justify-center md:justify-end">
+            <div className="card-actions justify-center md:justify-end mt-2">
               <button
                 onClick={async (): Promise<void> => {
                   const { data } = await electron.openDirectoryPickerPromise()
 
-                  electron.copyTemplateToPath(name, data)
+                  const message = await electron.copyTemplateToPath(name, data)
+                  toast.success(message)
                   setDestinationPath(data)
 
                   openModal(`my_text_editor_modal_${name}`)
@@ -152,6 +176,31 @@ export function Home(): React.ReactNode {
         />
         <IconModal setTemplates={setTemplates} name={name} />
         <TextEditorPromptModal path={destinationPath} name={name} />
+        <Modal modalId={`modal_add_tag_${name}`}>
+          <>
+            <div className="font-bold text-lg">Add a tag for {title || name}</div>
+            <div className="flex justify-center items-center gap-5 py-4">
+              <input
+                value={tagInput}
+                onKeyDown={(e): void => {
+                  if (e.key === 'Enter') {
+                    submitTag()
+                  }
+                }}
+                onChange={(e): void => {
+                  setTagInput(e.target.value)
+                }}
+                type="text"
+                className="input input-bordered w-full bg-base-300"
+              />
+              <form className="" method="dialog">
+                <button onClick={submitTag} className="btn">
+                  Add
+                </button>
+              </form>
+            </div>
+          </>
+        </Modal>
       </>
     )
   }
@@ -160,11 +209,16 @@ export function Home(): React.ReactNode {
       <div className="mt-10 md:mx-20 space-y-8">
         <h1 className="text-center md:text-left text-6xl font-thin">Templates</h1>
         <div className="flex items-center justify-center md:justify-start">
-          <input placeholder="Search" type="text" className="input input-bordered md:w-full" />
+          <input
+            onChange={onTemplatesFilterChange}
+            placeholder="Search"
+            type="text"
+            className="input input-bordered md:w-full"
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 px-20">
-        {templates.map((t, i) => (
+        {filteredTemplates.map((t, i) => (
           <React.Fragment key={i}>
             <Template setTemplates={setTemplates} {...t} />
           </React.Fragment>

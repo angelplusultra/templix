@@ -8,6 +8,7 @@ declare namespace Main {
     title: string
     description: string
     icon: string
+    tags: string[]
   }
   interface ChangeTemplateDisplayDataPayload {
     title: string
@@ -23,11 +24,27 @@ declare namespace Main {
     copyPath: string
   }
 
-  type TextEditor = 'vim' | 'nvim' | 'vscode' | 'terminal'
+  interface TextEditor {
+    appName: string
+    command: string
+    isInstalled: boolean
+  }
+  interface Terminal {
+    appName: string
+    terminal: string
+    isInstalled: boolean
+  }
 
-  interface OpenWithTextEditorPayload {
+  interface OpenWithAppPayload {
     name: string
     dest: string
-    textEditor: TextEditor
+    app: Application
+  }
+
+  type Application = Terminal | TextEditor
+
+  interface AddTagEventPayload {
+    tag: string
+    name: Template['name']
   }
 }

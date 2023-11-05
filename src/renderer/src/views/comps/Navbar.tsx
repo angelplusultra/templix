@@ -2,10 +2,18 @@ import { FaGithub } from 'react-icons/fa'
 import { Modal } from './Modal'
 import { electron } from '@renderer/helpers'
 import { useAuth, useTemplates } from '@renderer/context'
+import { useEffect, useState } from 'react'
 
 export function Navbar(): React.ReactNode {
+  const [version, setVersion] = useState('')
   const { authState, setAuthState } = useAuth()
   const { setTemplates } = useTemplates()
+
+  useEffect(() => {
+    electron.getVersion().then((version) => {
+      setVersion(version)
+    })
+  }, [])
   const openDirectoryPicker = async (): Promise<void> => {
     const { data } = await electron.openDirectoryPickerPromise()
     await electron.changeTemplateDirectory(data)
@@ -37,7 +45,9 @@ export function Navbar(): React.ReactNode {
       </div>
       <div className="flex-1">
         <a className="btn btn-ghost normal-case text-xl">Templix</a>
-        <p className="text-sm">by Hunterbidenafterlife</p>
+        <div className="flex gap-2 items-center">
+          <p>v{version}</p>
+        </div>
       </div>
       <div className="flex-none">
         <a

@@ -1,9 +1,24 @@
 import { electron } from '@renderer/helpers'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
 export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps): React.ReactNode {
-  const openWithTextEditor = (textEditor: App.TextEditor): void => {
-    toast('Opening ' + textEditor[0].toUpperCase() + textEditor.slice(1), {
+  const [apps, setApps] = useState<{
+    editors: App.TextEditor[]
+    terminals: App.Terminal[]
+  }>({
+    editors: [],
+    terminals: []
+  })
+
+  useEffect(() => {
+    electron.getApps().then((apps) => {
+      setApps(apps)
+    })
+  }, [])
+
+  const openWithApp = (app: App.Application): void => {
+    toast('Opening ' + app.appName, {
       icon: '👏',
       style: {
         borderRadius: '50px',
@@ -11,7 +26,7 @@ export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps):
         color: '#fff'
       }
     })
-    electron.openProjectInTextEditor(name, path, textEditor)
+    electron.openWithApp(name, path, app)
   }
   return (
     <dialog id={`my_text_editor_modal_${name}`} className="modal">
@@ -20,15 +35,29 @@ export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps):
         <form className=" modal-action flex justify-between" method="dialog">
           {/* if there is a button in form, it will close the modal */}
           <div className="join">
-            <button onClick={(): void => openWithTextEditor('vscode')} className="btn join-item">
-              VsCode
-            </button>
-            <button onClick={(): void => openWithTextEditor('terminal')} className="btn join-item">
-              Terminal
-            </button>
+            {apps.editors.map((editor) => (
+              <button
+                className="btn btn-sm"
+                key={editor.appName}
+                onClick={(): void => openWithApp(editor)}
+              >
+                {editor.appName}
+              </button>
+            ))}
+          </div>
+          <div className="join">
+            {apps.terminals.map((term) => (
+              <button
+                onClick={(): void => openWithApp(term)}
+                className="btn btn-sm join-item"
+                key={term.appName}
+              >
+                {term.appName}
+              </button>
+            ))}
           </div>
           <div>
-            <button className="btn">Close</button>
+            <button className="btn btn-sm">Close</button>
           </div>
         </form>
       </div>

@@ -9,8 +9,6 @@ export function Protect(): React.ReactNode {
   const pubRoutes = ['/']
   const location = useLocation()
 
-  console.log(location)
-
   if (authState.isLoading) {
     return (
       <div>

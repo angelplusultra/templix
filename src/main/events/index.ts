@@ -1,9 +1,10 @@
 import { BrowserWindow, OpenDialogReturnValue, app, dialog, ipcMain } from 'electron'
-import { readFileSync, readdirSync, writeFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'fs'
 import { statSync } from 'fs'
 import path from 'path'
 import copyDir from 'copy-dir'
 import os from 'os'
+import { exec } from 'child_process'
 
 const dataDir = app.getPath('userData')
 const dataFile = 'data.json'
@@ -13,6 +14,10 @@ const dataPath = path.join(dataDir, dataFile)
 export function registerEvents(browserWindow: BrowserWindow): void {
   ipcMain.on('ping', (e) => {
     e.reply('ping:success', 'pong')
+  })
+
+  ipcMain.on('get-version', (e) => {
+    e.reply('get-version:success', app.getVersion())
   })
 
   ipcMain.on('open', (e) => {
@@ -34,10 +39,6 @@ export function registerEvents(browserWindow: BrowserWindow): void {
 
     const parsedData = JSON.parse(data.toString())
 
-    console.log({
-      d
-    })
-
     parsedData.templateDir = d
 
     writeFileSync(dataPath, JSON.stringify(parsedData))
@@ -50,10 +51,6 @@ export function registerEvents(browserWindow: BrowserWindow): void {
     const parsedData = JSON.parse(data.toString())
 
     if (!parsedData.templateDir) {
-      console.log({
-        error: 'No template directory on record',
-        dataPath: dataPath
-      })
       e.reply('login:failure')
       return
     }
@@ -84,7 +81,8 @@ export function registerEvents(browserWindow: BrowserWindow): void {
         name: dir,
         title: dir,
         icon: '',
-        description: ''
+        description: '',
+        tags: []
       }
     })
     parsedData.templates = templates
@@ -107,7 +105,8 @@ export function registerEvents(browserWindow: BrowserWindow): void {
     } else {
       parsedData.templates.push({
         ...d,
-        icon: ''
+        icon: '',
+        tags: []
       })
     }
     writeFileSync(dataPath, JSON.stringify(parsedData))
@@ -120,8 +119,6 @@ export function registerEvents(browserWindow: BrowserWindow): void {
     const parsedData = JSON.parse(data.toString()) as Main.UserData
     const template = parsedData.templates.find((t) => t.name === d.name)
 
-    console.log(template)
-
     if (template) {
       template.icon = d.icon
     }
@@ -131,68 +128,151 @@ export function registerEvents(browserWindow: BrowserWindow): void {
     e.reply('change-main-icon:success')
   })
 
-  ipcMain.on('copy-template-to-path', (_, d: Main.CopyTemplateToPathPayload) => {
-    console.log(d)
+  ipcMain.on('copy-template-to-path', (e, d: Main.CopyTemplateToPathPayload) => {
     const data = readFileSync(dataPath)
 
     const parsedData = JSON.parse(data.toString()) as Main.UserData
     const template = parsedData.templates.find((t) => t.name === d.name)
     if (!template) {
-      console.error('Something went wrong')
       return
     }
     const templatePath = path.join(parsedData.templateDir, template.name)
-    console.log({ templatePath, copyPath: d.copyPath })
 
     copyDir.sync(templatePath, d.copyPath)
+
+    e.reply('copy-template-to-path:success')
+  })
+  ipcMain.on('add-tag', (e, d: Main.AddTagEventPayload) => {
+    const data = readFileSync(dataPath)
+
+    const parsedData = JSON.parse(data.toString()) as Main.UserData
+    const template = parsedData.templates.find((t) => t.name === d.name)
+    if (!template) {
+      return
+    }
+    template.tags.push(d.tag)
+    writeFileSync(dataPath, JSON.stringify(parsedData))
+    e.reply('add-tag:success')
+  })
+  ipcMain.on('delete-tag', (e, d: Main.AddTagEventPayload) => {
+    const data = readFileSync(dataPath)
+
+    const parsedData = JSON.parse(data.toString()) as Main.UserData
+    const template = parsedData.templates.find((t) => t.name === d.name)
+    if (!template) {
+      return
+    }
+    template.tags = template.tags.filter((tag) => tag !== d.tag)
+    writeFileSync(dataPath, JSON.stringify(parsedData))
+    e.reply('delete-tag:success')
   })
 
-  ipcMain.on('open-with-text-editor', async (e, d: Main.OpenWithTextEditorPayload) => {
-    //   const command = "code " + d.copyPath
-    //
-    //   exec(command, (error, stdout, stderr) => {
-    //   if (error) {
-    //     console.error(`Error: ${error.message}`);
-    //     return;
-    //   }
-    //   if (stderr) {
-    //     console.error(`Command execution failed: ${stderr}`);
-    //   }
-    //   console.log(`Directory opened in VS Code: ${d.copyPath}`);
-    // });
-
-    console.log({
-      data: d
-    })
+  ipcMain.on('open-with-app', async (_, d: Main.OpenWithAppPayload) => {
     const openEditor = await import('open-editor')
     const open = await import('open')
+    if ('terminal' in d.app) {
+      open.openApp(d.app.terminal, {
+        arguments: [d.dest],
+        newInstance: true
+      })
+    } else {
+      openEditor.default(
+        [
+          {
+            file: d.dest
+          }
+        ],
+        {
+          editor: d.app.command
+        }
+      )
+    }
+  })
 
-    if (d.textEditor === 'terminal') {
-      if (os.platform() === 'win32') {
-        open.openApp('cmd', {
-          arguments: [d.dest]
+  ipcMain.on('get-apps', (e) => {
+    function hasTextEditor(
+      appCommand: string,
+      appName: string
+    ): Promise<{
+      isInstalled: boolean
+      command: string
+      appName: string
+    }> {
+      const command = `${os.platform() === 'win32' ? 'where' : 'which'} ${appCommand}`
+
+      return new Promise((res) => {
+        exec(command, (e) => {
+          if (e) {
+            res({
+              isInstalled: false,
+              command: appCommand,
+              appName
+            })
+          } else {
+            res({
+              isInstalled: true,
+              command: appCommand,
+              appName
+            })
+          }
         })
-      } else if (os.platform() === 'darwin') {
-        open.openApp(`Terminal`, {
-          arguments: [d.dest],
-          newInstance: true
-        })
-        return
-      } else if (os.platform() === 'linux') {
-        e.reply('open-with-text-editor:failure', 'Linux not supported')
-        return
+      })
+    }
+    const terminals = {
+      darwin: [
+        {
+          term: 'iTerm.app',
+          appName: 'iTerm'
+        },
+        {
+          term: 'Hyper.app',
+          appName: 'Hyper Terminal'
+        }
+      ]
+    }
+
+    function hasTerminal(terminal: string, appName: string): Main.Terminal {
+      if (existsSync(`/Applications/${terminal}`)) {
+        return {
+          isInstalled: true,
+          terminal,
+          appName
+        }
+      }
+      return {
+        isInstalled: false,
+        terminal,
+        appName
       }
     }
 
-    openEditor.default(
-      [
-        {
-          file: d.dest
-        }
-      ],
+    const editors = [
       {
-        editor: d.textEditor
+        command: 'code',
+        appName: 'VS Code'
       }
-    )
+    ]
+
+    const promises = editors.map((app) => hasTextEditor(app.command, app.appName))
+
+    Promise.all(promises).then((editors) => {
+      const installedTerminals = [
+        {
+          terminal: 'Terminal',
+          appName: 'Terminal',
+          isInstalled: true
+        },
+        ...terminals[os.platform() as keyof typeof terminals]
+          .map((term) => hasTerminal(term.term, term.appName))
+          .filter((term) => term.isInstalled === true)
+      ]
+
+      const installedEditors = editors.filter((editor) => editor.isInstalled === true)
+      // NOT PLATFORM AGNOSTIC YET, WINDOWS WILL RETURN AN EMPTY ARRAY FOR TERMINALS
+      e.reply('get-apps:success', {
+        editors: installedEditors,
+        terminals: installedTerminals
+      })
+    })
   })
 }

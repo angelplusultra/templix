@@ -1,3 +1,4 @@
+import { electron } from '@renderer/helpers'
 import { Icon, icons } from '@renderer/views/comps'
 
 export function IconModal({ name, setTemplates }: App.IconModalProps): React.ReactNode {
@@ -8,22 +9,11 @@ export function IconModal({ name, setTemplates }: App.IconModalProps): React.Rea
           {Object.keys(icons).map((icon, i) => (
             <form key={i} method="dialog">
               <button
-                onClick={(): void => {
-                  console.log(`You have selected ${icon} for ${name}`)
+                onClick={async (): Promise<void> => {
+                  await electron.changeIcon(name, icon)
+                  const templates = await electron.getTemplates()
 
-                  window.electron.ipcRenderer.send('change-main-icon', {
-                    name,
-                    icon
-                  })
-                  window.electron.ipcRenderer.once('change-main-icon:success', () => {
-                    window.electron.ipcRenderer.send('get-templates')
-                    window.electron.ipcRenderer.once(
-                      'get-templates:success',
-                      (_, d: App.Template[]) => {
-                        setTemplates(d)
-                      }
-                    )
-                  })
+                  setTemplates(templates)
                 }}
                 className="h-40 btn"
               >

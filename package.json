@@ -1,10 +1,13 @@
 {
   "name": "templix",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "A project template management GUI for developers",
   "main": "./out/main/index.js",
   "author": "Hunterbidenafterlife",
-  "homepage": "https://www.electronjs.org",
+  "homepage": "https://github.com/angelplusultra/templix",
+  "repository": {
+    "url": "https://github.com/angelplusultra/templix"
+  },
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

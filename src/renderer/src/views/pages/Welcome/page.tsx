@@ -35,7 +35,6 @@ export function Welcome(): React.ReactNode {
                 onClick={(): void => {
                   window.electron.ipcRenderer.send('confirm-dir-selection', dirPath)
                   window.electron.ipcRenderer.on('confirm-dir-selection:success', (_, d) => {
-                    console.log('Directory saved to profile')
                     setAuthState({
                       isAuthenticated: true,
                       templateDir: d,

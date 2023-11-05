@@ -13,17 +13,11 @@ export function AuthProvider({ children }: App.AuthProviderProps): React.ReactNo
   useEffect(() => {
     window.electron.ipcRenderer.send('login')
     window.electron.ipcRenderer.once('login:success', (_, d) => {
-      console.log({
-        templatEDirOnRecord: d
+      setAuthState({
+        isAuthenticated: true,
+        templateDir: d,
+        isLoading: false
       })
-
-      setTimeout(() => {
-        setAuthState({
-          isAuthenticated: true,
-          templateDir: d,
-          isLoading: false
-        })
-      }, 5000)
     })
     window.electron.ipcRenderer.once('login:failure', () => {
       setAuthState((prev) => ({
@@ -32,10 +26,6 @@ export function AuthProvider({ children }: App.AuthProviderProps): React.ReactNo
       }))
     })
   }, [])
-
-  useEffect(() => {
-    console.log(authState)
-  }, [authState])
 
   return (
     <authContext.Provider

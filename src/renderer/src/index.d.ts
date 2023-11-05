@@ -1,4 +1,5 @@
 declare namespace App {
+  import { IpcRendererEvent } from 'electron'
   type EventChannel = 'ping' | 'ping:success'
   interface AuthState {
     isAuthenticated: boolean
@@ -21,7 +22,9 @@ declare namespace App {
     title: string
     description: string
     icon: keyof Icons
+    tags: string[]
   }
+
   interface TemplateProps extends Template {
     setTemplates: React.Dispatch<React.SetStateAction<Template[]>>
   }
@@ -60,6 +63,7 @@ declare namespace App {
   }
   interface TagProps {
     textContent: string
+    templateName: string
   }
   interface ModalProps {
     modalId: string
@@ -79,7 +83,46 @@ declare namespace App {
     children: React.ReactNode
   }
 
-  interface UseTemplatesReturnType extends TemplatesContext {}
+  interface UseTemplatesReturnType extends TemplatesContext {
+    onTemplatesFilterChange(e: React.ChangeEvent<HTMLInputElement>): void
+    addTag(name: Template['name'], tag: string): void
+    filteredTemplates: Template[]
+  }
 
-  type TextEditor = 'vim' | 'nvim' | 'vscode' | 'terminal'
+  interface ElectronHelpers {
+    removeAllListeners: (channel: string) => void
+    copyTemplateToPath: (templateName: string, path: string) => void
+    openDirectoryPickerPromise: () => Promise<{
+      data: string
+      event: IpcRendererEvent
+    }>
+    openWithApp: (templateName: string, dest: string, App: Application) => void
+    changeTemplateDirectory: (dir: string) => Promise<string>
+    getTemplates: () => Promise<Template[]>
+    getVersion: () => Promise<string>
+    addTagToTemplate: (name: string, tag: string) => Promise<void>
+    deleteTag: (
+      name: string,
+      tag: string
+    ) => Promise<{
+      d: null
+      e: IpcRendererEvent
+    }>
+  }
+
+  interface TextEditor {
+    appName: string
+    command: string
+    isInstalled: boolean
+  }
+
+  type Application = TextEditor | Terminal
+
+  interface Terminal {
+    isInstalled: boolean
+    terminal: string
+    appName: string
+  }
+
+  type DeleteTag = (name: string, tag: string) => Promise<{ d: null; e: IpcRendererEvent }>
 }
