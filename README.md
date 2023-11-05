@@ -5,6 +5,8 @@
 
 A project template management GUI tool for developers, made with React + Electron.
 
+<img src="media/templix_demo.gif" width="500"/>
+
 ## Recommended IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
