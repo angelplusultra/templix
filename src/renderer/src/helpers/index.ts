@@ -70,7 +70,7 @@ export const electron = {
     })
 
     return new Promise((res) => {
-      on('add-tag:success', () => {
+      once('add-tag:success', () => {
         res()
       })
     })
