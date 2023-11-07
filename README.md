@@ -15,7 +15,7 @@ A project template management GUI tool for developers, made with React + Electro
 
 ## Step 3: Use a template by telling Templix where you would like to copy over the directory, then open with your favorite text-editor or terminal emulator
 
-<img src="media/templix_demo_02.gif" width="500"/>
+<img src="media/templix_demo_03.gif" width="500"/>
 
 ## Recommended IDE Setup
 
