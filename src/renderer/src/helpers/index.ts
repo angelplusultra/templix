@@ -112,11 +112,11 @@ export const electron = {
     e: IpcRendererEvent
     d: null
   }> => {
-    send('change-icon', {
+    send('change-main-icon', {
       name,
       icon
     })
-    return await onceElectronEventPromise('change-icon:success')
+    return await onceElectronEventPromise('change-main-icon:success')
   }
 }
 
