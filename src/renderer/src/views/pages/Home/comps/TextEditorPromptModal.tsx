@@ -2,14 +2,13 @@ import { electron } from '@renderer/helpers'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 
+interface SystemApplication {
+  isInstalled: boolean
+  appName: string
+  displayName: string
+}
 export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps): React.ReactNode {
-  const [apps, setApps] = useState<{
-    editors: App.TextEditor[]
-    terminals: App.Terminal[]
-  }>({
-    editors: [],
-    terminals: []
-  })
+  const [apps, setApps] = useState<SystemApplication[]>([])
 
   useEffect(() => {
     electron.getApps().then((apps) => {
@@ -17,8 +16,8 @@ export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps):
     })
   }, [])
 
-  const openWithApp = (app: App.Application): void => {
-    toast('Opening ' + app.appName, {
+  const openWithApp = (app: SystemApplication): void => {
+    toast('Opening ' + app.displayName, {
       icon: '👏',
       style: {
         borderRadius: '50px',
@@ -35,27 +34,13 @@ export function TextEditorPromptModal({ name, path }: App.TextEditorModalProps):
         <form className=" modal-action flex justify-between" method="dialog">
           {/* if there is a button in form, it will close the modal */}
           <div className="join">
-            {apps.editors.map((editor) => (
-              <button
-                className="btn btn-sm"
-                key={editor.appName}
-                onClick={(): void => openWithApp(editor)}
-              >
-                {editor.appName}
+            {apps.map((app, i) => (
+              <button className="btn btn-sm" key={i} onClick={(): void => openWithApp(app)}>
+                {app.displayName}
               </button>
             ))}
           </div>
-          <div className="join">
-            {apps.terminals.map((term) => (
-              <button
-                onClick={(): void => openWithApp(term)}
-                className="btn btn-sm join-item"
-                key={term.appName}
-              >
-                {term.appName}
-              </button>
-            ))}
-          </div>
+
           <div>
             <button className="btn btn-sm">Close</button>
           </div>

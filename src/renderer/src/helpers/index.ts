@@ -30,7 +30,7 @@ export const electron = {
         })
       })
     }),
-  openWithApp: (templateName: string, dest: string, app: App.Application): void => {
+  openWithApp: (templateName: string, dest: string, app: App.SystemApplication): void => {
     send('open-with-app', {
       name: templateName,
       dest,
@@ -90,20 +90,25 @@ export const electron = {
       e
     }
   },
-  getApps: async (): Promise<{
-    terminals: App.Terminal[]
-    editors: App.TextEditor[]
-  }> => {
+
+  getApps: async (): Promise<
+    {
+      appName: string
+      displayName: string
+      isInstalled: boolean
+    }[]
+  > => {
     send('get-apps')
 
-    const { d } = await onceElectronEventPromise<{
-      editors: App.TextEditor[]
-      terminals: App.Terminal[]
-    }>('get-apps:success')
+    const { d } = await onceElectronEventPromise<
+      {
+        appName: string
+        displayName: string
+        isInstalled: boolean
+      }[]
+    >('get-apps:success')
 
-    return {
-      ...d
-    }
+    return d
   },
   changeIcon: async (
     name: string,

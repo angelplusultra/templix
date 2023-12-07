@@ -168,111 +168,63 @@ export function registerEvents(browserWindow: BrowserWindow): void {
   })
 
   ipcMain.on('open-with-app', async (_, d: Main.OpenWithAppPayload) => {
-    const openEditor = await import('open-editor')
-    const open = await import('open')
-    if ('terminal' in d.app) {
-      open.openApp(d.app.terminal, {
-        arguments: [d.dest],
-        newInstance: true
-      })
-    } else {
-      openEditor.default(
-        [
-          {
-            file: d.dest
-          }
-        ],
-        {
-          editor: d.app.command
-        }
-      )
-    }
+    exec(`open -a "${d.app.appName}" ${d.dest}`, (err) => {
+      if (err) {
+        console.log(err)
+      }
+    })
   })
 
-  ipcMain.on('get-apps', (e) => {
-    function hasTextEditor(
-      appCommand: string,
-      appName: string
-    ): Promise<{
-      isInstalled: boolean
-      command: string
-      appName: string
-    }> {
-      const command = `${os.platform() === 'win32' ? 'where' : 'which'} ${appCommand}`
+  ipcMain.on('get-apps', async (e) => {
+    function hasApplication(app: Main.Application): Main.SystemApplication {
+      const appExists = existsSync('/Applications/' + app.appName)
 
-      return new Promise((res) => {
-        exec(command, (e) => {
-          if (e) {
-            res({
-              isInstalled: false,
-              command: appCommand,
-              appName
-            })
-          } else {
-            res({
-              isInstalled: true,
-              command: appCommand,
-              appName
-            })
-          }
-        })
-      })
-    }
-    const terminals = {
-      darwin: [
-        {
-          term: 'iTerm.app',
-          appName: 'iTerm'
-        },
-        {
-          term: 'Hyper.app',
-          appName: 'Hyper Terminal'
-        }
-      ]
-    }
-
-    function hasTerminal(terminal: string, appName: string): Main.Terminal {
-      if (existsSync(`/Applications/${terminal}`)) {
+      if (!appExists) {
         return {
-          isInstalled: true,
-          terminal,
-          appName
+          ...app,
+          isInstalled: false
         }
       }
+
       return {
-        isInstalled: false,
-        terminal,
-        appName
+        ...app,
+        isInstalled: true
       }
     }
 
-    const editors = [
+    const applications: Main.Application[] = [
       {
-        command: 'code',
-        appName: 'VS Code'
+        type: 'editor',
+        appName: 'Visual Studio Code.app',
+        displayName: 'VS Code'
+      },
+      {
+        type: 'terminal',
+        appName: 'iTerm.app',
+        displayName: 'iTerm'
+      },
+      {
+        type: 'terminal',
+        appName: 'Terminal',
+        displayName: 'Terminal'
+      },
+      {
+        type: 'editor',
+        appName: 'Hyper.app',
+        displayName: 'Hyper Terminal'
       }
     ]
 
-    const promises = editors.map((app) => hasTextEditor(app.command, app.appName))
-
-    Promise.all(promises).then((editors) => {
-      const installedTerminals = [
-        {
-          terminal: 'Terminal',
-          appName: 'Terminal',
-          isInstalled: true
-        },
-        ...terminals[os.platform() as keyof typeof terminals]
-          .map((term) => hasTerminal(term.term, term.appName))
-          .filter((term) => term.isInstalled === true)
-      ]
-
-      const installedEditors = editors.filter((editor) => editor.isInstalled === true)
-      // NOT PLATFORM AGNOSTIC YET, WINDOWS WILL RETURN AN EMPTY ARRAY FOR TERMINALS
-      e.reply('get-apps:success', {
-        editors: installedEditors,
-        terminals: installedTerminals
+    const systemApps = applications.map((app) => {
+      return hasApplication({
+        ...app
       })
     })
+
+    // NOT PLATFORM AGNOSTIC YET, WINDOWS WILL RETURN AN EMPTY ARRAY FOR TERMINALS
+    e.reply(
+      'get-apps:success',
+      systemApps.filter((app) => app.isInstalled)
+    )
   })
 }

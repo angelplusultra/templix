@@ -38,11 +38,19 @@ declare namespace Main {
   interface OpenWithAppPayload {
     name: string
     dest: string
-    app: Application
+    app: SystemApplication
+  }
+  type ApplicationType = 'terminal' | 'editor'
+
+  interface Application {
+    appName: string
+    displayName: string
+    type: ApplicationType
   }
 
-  type Application = Terminal | TextEditor
-
+  interface SystemApplication extends Application {
+    isInstalled: boolean
+  }
   interface AddTagEventPayload {
     tag: string
     name: Template['name']
