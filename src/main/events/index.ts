@@ -168,7 +168,7 @@ export function registerEvents(browserWindow: BrowserWindow): void {
   })
 
   ipcMain.on('open-with-app', async (_, d: Main.OpenWithAppPayload) => {
-    exec(`open -a "${d.app.appName}" ${d.dest}`, (err) => {
+    exec(`open -a "${d.app.appName}" "${d.dest}"`, (err) => {
       if (err) {
         console.log(err)
       }

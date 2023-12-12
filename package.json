@@ -1,9 +1,9 @@
 {
   "name": "templix",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A project template management GUI for developers",
   "main": "./out/main/index.js",
-  "author": "Hunterbidenafterlife",
+  "author": "angelplusultra",
   "homepage": "https://github.com/angelplusultra/templix",
   "repository": {
     "url": "https://github.com/angelplusultra/templix"
